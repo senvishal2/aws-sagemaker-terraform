@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "Installing dependencies..."
+      - apt-get update -y
+      - apt-get install -y unzip curl jq
+      - curl -Lo terraform.zip https://releases.hashicorp.com/terraform/1.6.0/terraform_1.6.0_linux_amd64.zip
+      - unzip terraform.zip -d /usr/local/bin/
+      - terraform -v
+      - curl -Lo terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v0.53.0/terragrunt_linux_amd64
+      - chmod +x terragrunt
+      - mv terragrunt /usr/local/bin/
+      - terragrunt -v
+
+  pre_build:
+    commands:
+      - echo "Logging in to AWS..."
+      - aws sts get-caller-identity
+
+  build:
+    commands:
+      - echo "Starting Terragrunt deploy..."
+      - cd live/dev
+      - terragrunt init
+      - terragrunt plan -out=plan.out
+      - terragrunt apply -auto-approve plan.out
+
+artifacts:
+  files:
+    - "**/*"
+  discard-paths: yes
